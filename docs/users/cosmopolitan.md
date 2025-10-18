@@ -27,15 +27,7 @@ Notes:
 
 ## Linking your app
 
-Compile and link your application with `cosmocc`/`cosmoc++`, adding your vcpkg-installed library and include paths. For example:
-
-```bash
-cosmocc -I$(./vcpkg fetch zlib:x64-cosmo | grep include) \
-        -L$(./vcpkg fetch zlib:x64-cosmo | grep lib) \
-        -o myapp.com.dbg myapp.c -lz
-```
-
-Or more simply, if you've already installed the port:
+Compile and link your application with `cosmocc`/`cosmoc++`, adding your vcpkg-installed library and include paths. After installing a port with the x64-cosmo triplet, the headers and libraries will be in the `installed/x64-cosmo` directory:
 
 ```bash
 cosmocc -I./installed/x64-cosmo/include \
