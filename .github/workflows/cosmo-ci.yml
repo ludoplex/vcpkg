@@ -1,0 +1,51 @@
+name: Cosmopolitan CI
+
+on:
+  push:
+    branches:
+      - master
+      - 'copilot/**'
+  pull_request:
+    paths:
+      - 'triplets/community/x64-cosmo.cmake'
+      - 'scripts/toolchains/cosmopolitan.toolchain.cmake'
+      - 'samples/cosmo-hello/**'
+      - '.github/workflows/cosmo-ci.yml'
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout vcpkg
+        uses: actions/checkout@v3
+
+      - name: Clone and build Cosmopolitan
+        run: |
+          cd /tmp
+          git clone --depth=1 https://github.com/jart/cosmopolitan.git
+          cd cosmopolitan
+          make -j$(nproc)
+          echo "COSMOPOLITAN_ROOT=/tmp/cosmopolitan" >> $GITHUB_ENV
+          echo "/tmp/cosmopolitan/bin" >> $GITHUB_PATH
+
+      - name: Bootstrap vcpkg
+        run: |
+          ./bootstrap-vcpkg.sh
+
+      - name: Install zlib with x64-cosmo triplet
+        run: |
+          ./vcpkg install zlib:x64-cosmo
+
+      - name: Compile sample program
+        run: |
+          cosmocc -I./installed/x64-cosmo/include \
+                  -L./installed/x64-cosmo/lib \
+                  -o samples/cosmo-hello/hello.com.dbg \
+                  samples/cosmo-hello/hello.c -lz
+
+      - name: Verify binary was created
+        run: |
+          ls -lh samples/cosmo-hello/hello.com.dbg
+          file samples/cosmo-hello/hello.com.dbg
