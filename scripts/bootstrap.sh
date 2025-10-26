@@ -163,92 +163,48 @@ vcpkgExtractTar()
     mv "$toPath.partial" "$toPath"
 }
 
-# Determine what we are going to do to bootstrap:
-# MacOS -> Download vcpkg-macos
-# Linux
-#   useMuslC -> download vcpkg-muslc
-#   amd64 -> download vcpkg-glibc
-# Otherwise
-#   Download and build from source
+# Build vcpkg from source in the toolsrc directory
+echo "Building vcpkg from source..."
 
-# Read the vcpkg-tool config file to determine what release to download
-. "$vcpkgRootDir/scripts/vcpkg-tool-metadata.txt"
-
-vcpkgDownloadTool="ON"
-if [ "$UNAME" = "Darwin" ]; then
-    echo "Downloading vcpkg-macos..."
-    vcpkgToolReleaseSha=$VCPKG_MACOS_SHA
-    vcpkgToolName="vcpkg-macos"
-elif [ "$vcpkgUseMuslC" = "ON" ]; then
-    echo "Downloading vcpkg-muslc..."
-    vcpkgToolReleaseSha=$VCPKG_MUSLC_SHA
-    vcpkgToolName="vcpkg-muslc"
-elif [ "$ARCH" = "x86_64" ]; then
-    echo "Downloading vcpkg-glibc..."
-    vcpkgToolReleaseSha=$VCPKG_GLIBC_SHA
-    vcpkgToolName="vcpkg-glibc"
-else
-    echo "Unable to determine a binary release of vcpkg; attempting to build from source."
-    vcpkgDownloadTool="OFF"
-    vcpkgToolReleaseSha=$VCPKG_TOOL_SOURCE_SHA
+if [ "x$CXX" = "x" ]; then
+    if which g++-12 >/dev/null 2>&1; then
+        CXX=g++-12
+    elif which g++-11 >/dev/null 2>&1; then
+        CXX=g++-11
+    elif which g++-10 >/dev/null 2>&1; then
+        CXX=g++-10
+    elif which g++-9 >/dev/null 2>&1; then
+        CXX=g++-9
+    elif which g++-8 >/dev/null 2>&1; then
+        CXX=g++-8
+    elif which g++-7 >/dev/null 2>&1; then
+        CXX=g++-7
+    elif which g++-6 >/dev/null 2>&1; then
+        CXX=g++-6
+    elif which g++ >/dev/null 2>&1; then
+        CXX=g++
+    fi
+    # If we can't find g++, allow CMake to do the look-up
 fi
 
-# Do the download or build.
-if [ "$vcpkgDownloadTool" = "ON" ]; then
-    vcpkgDownloadFile "https://github.com/microsoft/vcpkg-tool/releases/download/$VCPKG_TOOL_RELEASE_TAG/$vcpkgToolName" "$vcpkgRootDir/vcpkg" $vcpkgToolReleaseSha
-else
-    if [ "x$CXX" = "x" ]; then
-        if which g++-12 >/dev/null 2>&1; then
-            CXX=g++-12
-        elif which g++-11 >/dev/null 2>&1; then
-            CXX=g++-11
-        elif which g++-10 >/dev/null 2>&1; then
-            CXX=g++-10
-        elif which g++-9 >/dev/null 2>&1; then
-            CXX=g++-9
-        elif which g++-8 >/dev/null 2>&1; then
-            CXX=g++-8
-        elif which g++-7 >/dev/null 2>&1; then
-            CXX=g++-7
-        elif which g++-6 >/dev/null 2>&1; then
-            CXX=g++-6
-        elif which g++ >/dev/null 2>&1; then
-            CXX=g++
-        fi
-        # If we can't find g++, allow CMake to do the look-up
-    fi
+baseBuildDir="$vcpkgRootDir/buildtrees/_vcpkg"
+buildDir="$baseBuildDir/build"
+srcDir="$vcpkgRootDir/toolsrc"
 
-    vcpkgToolReleaseTarball="$VCPKG_TOOL_RELEASE_TAG.tar.gz"
-    vcpkgToolUrl="https://github.com/microsoft/vcpkg-tool/archive/$vcpkgToolReleaseTarball"
-    baseBuildDir="$vcpkgRootDir/buildtrees/_vcpkg"
-    buildDir="$baseBuildDir/build"
-    tarballPath="$downloadsDir/$vcpkgToolReleaseTarball"
-    srcBaseDir="$baseBuildDir/src"
-    srcDir="$srcBaseDir/vcpkg-tool-$VCPKG_TOOL_RELEASE_TAG"
+echo "Building vcpkg-tool from $srcDir..."
+rm -rf "$baseBuildDir"
+mkdir -p "$buildDir"
+cmakeConfigOptions="-DCMAKE_BUILD_TYPE=Release -G 'Ninja' -DVCPKG_DEVELOPMENT_WARNINGS=OFF -DBUILD_TESTING=OFF"
 
-    if [ -e "$tarballPath" ]; then
-        vcpkgCheckEqualFileHash "$vcpkgToolUrl" "$tarballPath" "$vcpkgToolReleaseSha"
-    else
-        echo "Downloading vcpkg tool sources"
-        vcpkgDownloadFile "$vcpkgToolUrl" "$tarballPath" "$vcpkgToolReleaseSha"
-    fi
-
-    echo "Building vcpkg-tool..."
-    rm -rf "$baseBuildDir"
-    mkdir -p "$buildDir"
-    vcpkgExtractTar "$tarballPath" "$srcBaseDir"
-    cmakeConfigOptions="-DCMAKE_BUILD_TYPE=Release -G 'Ninja' -DVCPKG_DEVELOPMENT_WARNINGS=OFF"
-
-    if [ "${VCPKG_MAX_CONCURRENCY}" != "" ] ; then
-        cmakeConfigOptions=" $cmakeConfigOptions '-DCMAKE_JOB_POOL_COMPILE:STRING=compile' '-DCMAKE_JOB_POOL_LINK:STRING=link' '-DCMAKE_JOB_POOLS:STRING=compile=$VCPKG_MAX_CONCURRENCY;link=$VCPKG_MAX_CONCURRENCY' "
-    fi
-
-    (cd "$buildDir" && CXX="$CXX" eval cmake "$srcDir" $cmakeConfigOptions) || exit 1
-    (cd "$buildDir" && cmake --build .) || exit 1
-
-    rm -rf "$vcpkgRootDir/vcpkg"
-    cp "$buildDir/vcpkg" "$vcpkgRootDir/"
+if [ "${VCPKG_MAX_CONCURRENCY}" != "" ] ; then
+    cmakeConfigOptions=" $cmakeConfigOptions '-DCMAKE_JOB_POOL_COMPILE:STRING=compile' '-DCMAKE_JOB_POOL_LINK:STRING=link' '-DCMAKE_JOB_POOLS:STRING=compile=$VCPKG_MAX_CONCURRENCY;link=$VCPKG_MAX_CONCURRENCY' "
 fi
+
+(cd "$buildDir" && CXX="$CXX" eval cmake "$srcDir" $cmakeConfigOptions) || exit 1
+(cd "$buildDir" && cmake --build .) || exit 1
+
+rm -rf "$vcpkgRootDir/vcpkg"
+cp "$buildDir/vcpkg" "$vcpkgRootDir/"
 
 "$vcpkgRootDir/vcpkg" version --disable-metrics
 
