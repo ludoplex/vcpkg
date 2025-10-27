@@ -196,12 +196,19 @@ If you want to add instructions for your specific distro,
 
 ## Installing macOS Developer Tools
 
-On macOS, you'll need to install Xcode Command Line Tools and Homebrew, then install CMake and Ninja:
+On macOS, you'll need to install Xcode Command Line Tools, CMake, and Ninja:
 
 ```sh
 $ xcode-select --install
+```
+
+Then install CMake and Ninja. For example, using Homebrew:
+
+```sh
 $ brew install cmake ninja
 ```
+
+Alternatively, you can use MacPorts, or download and install CMake and Ninja standalone binaries.
 
 Then follow along with the prompts in the windows that comes up.
 
