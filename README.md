@@ -62,6 +62,8 @@ Prerequisites:
 - Windows 7 or newer
 - [Git][getting-started:git]
 - [Visual Studio][getting-started:visual-studio] 2015 Update 3 or greater with the English language pack
+- CMake (can be installed via Visual Studio or standalone)
+- Ninja (can be installed via Visual Studio or standalone)
 
 First, download and bootstrap vcpkg itself; it can be installed anywhere, but generally we recommend using vcpkg as a
 submodule so the consuming repo can stay self-contained. Alternatively, vcpkg can be installed globally; we recommend
@@ -128,9 +130,13 @@ including on using CMake with an IDE.
 Prerequisites for Linux:
 - [Git][getting-started:git]
 - [g++][getting-started:linux-gcc] >= 6
+- CMake >= 3.15
+- Ninja
 
 Prerequisites for macOS:
 - [Apple Developer Tools][getting-started:macos-dev-tools]
+- CMake >= 3.15
+- Ninja
 
 First, download and bootstrap vcpkg itself; it can be installed anywhere,
 but generally we recommend using vcpkg as a submodule.
@@ -173,14 +179,14 @@ need to install:
 
 ```sh
 $ sudo apt-get update
-$ sudo apt-get install build-essential tar curl zip unzip
+$ sudo apt-get install build-essential tar curl zip unzip cmake ninja-build
 ```
 
 - CentOS
 
 ```sh
 $ sudo yum install centos-release-scl
-$ sudo yum install devtoolset-7
+$ sudo yum install devtoolset-7 cmake ninja-build
 $ scl enable devtoolset-7 bash
 ```
 
@@ -190,11 +196,25 @@ If you want to add instructions for your specific distro,
 
 ## Installing macOS Developer Tools
 
-On macOS, the only thing you should need to do is run the following in your terminal:
+On macOS, you'll need to install Xcode Command Line Tools, CMake, and Ninja:
 
 ```sh
 $ xcode-select --install
 ```
+
+Then install CMake and Ninja. For example, using Homebrew:
+
+```sh
+$ brew install cmake ninja
+```
+
+Or using MacPorts:
+
+```sh
+$ sudo port install cmake ninja
+```
+
+You can also download and install CMake and Ninja standalone binaries.
 
 Then follow along with the prompts in the windows that comes up.
 

@@ -45,22 +45,33 @@ while (!($vcpkgRootDir -eq "") -and !(Test-Path "$vcpkgRootDir\.vcpkg-root"))
 
 Write-Verbose "Examining $vcpkgRootDir for .vcpkg-root - Found"
 
-# Read the vcpkg-tool config file to determine what release to download
-$Config = ConvertFrom-StringData (Get-Content "$PSScriptRoot\vcpkg-tool-metadata.txt" -Raw)
-$versionDate = $Config.VCPKG_TOOL_RELEASE_TAG
+# Build vcpkg from source
+Write-Host "Building vcpkg from source..."
 
-if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64' -or $env:PROCESSOR_IDENTIFIER -match "ARMv[8,9] \(64-bit\)") {
-    & "$scriptsDir/tls12-download-arm64.exe" github.com "/microsoft/vcpkg-tool/releases/download/$versionDate/vcpkg-arm64.exe" "$vcpkgRootDir\vcpkg.exe"
-} else {
-    & "$scriptsDir/tls12-download.exe" github.com "/microsoft/vcpkg-tool/releases/download/$versionDate/vcpkg.exe" "$vcpkgRootDir\vcpkg.exe"
+$toolsrcDir = "$vcpkgRootDir\toolsrc"
+$buildDir = "$vcpkgRootDir\buildtrees\_vcpkg\build"
+
+if (!(Test-Path $buildDir)) {
+    New-Item -ItemType Directory -Path $buildDir -Force | Out-Null
 }
 
-Write-Host ""
+# Configure and build
+Push-Location $buildDir
+try {
+    & cmake "$toolsrcDir" -G Ninja -DCMAKE_BUILD_TYPE=Release -DVCPKG_DEVELOPMENT_WARNINGS=OFF -DBUILD_TESTING=OFF
+    if ($LASTEXITCODE -ne 0) {
+        throw "CMake configuration failed"
+    }
 
-if ($LASTEXITCODE -ne 0)
-{
-    Write-Error "Downloading vcpkg.exe failed. Please check your internet connection, or consider downloading a recent vcpkg.exe from https://github.com/microsoft/vcpkg-tool with a browser."
-    throw
+    & cmake --build .
+    if ($LASTEXITCODE -ne 0) {
+        throw "Build failed"
+    }
+
+    # Copy the built vcpkg.exe to the root directory
+    Copy-Item "vcpkg.exe" "$vcpkgRootDir\vcpkg.exe" -Force
+} finally {
+    Pop-Location
 }
 
 & "$vcpkgRootDir\vcpkg.exe" version --disable-metrics
