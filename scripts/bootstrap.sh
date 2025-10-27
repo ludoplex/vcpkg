@@ -69,18 +69,20 @@ vcpkgCheckRepoTool()
     if ! command -v "$__tool" >/dev/null 2>&1 ; then
         echo "Could not find $__tool. Please install it (and other dependencies) with:"
         echo "On Debian and Ubuntu derivatives:"
-        echo "  sudo apt-get install curl zip unzip tar"
+        echo "  sudo apt-get install curl zip unzip tar cmake ninja-build"
         echo "On recent Red Hat and Fedora derivatives:"
-        echo "  sudo dnf install curl zip unzip tar"
+        echo "  sudo dnf install curl zip unzip tar cmake ninja-build"
         echo "On older Red Hat and Fedora derivatives:"
-        echo "  sudo yum install curl zip unzip tar"
+        echo "  sudo yum install curl zip unzip tar cmake ninja-build"
         echo "On SUSE Linux and derivatives:"
-        echo "  sudo zypper install curl zip unzip tar"
+        echo "  sudo zypper install curl zip unzip tar cmake ninja"
         echo "On Arch Linux and derivatives:"
         echo "  sudo pacman -S curl zip unzip tar cmake ninja"
         echo "On Alpine:"
         echo "  apk add build-base cmake ninja zip unzip curl git"
         echo "  (and export VCPKG_FORCE_SYSTEM_BINARIES=1)"
+        echo "On macOS:"
+        echo "  brew install cmake ninja"
         exit 1
     fi
 }
@@ -89,6 +91,8 @@ vcpkgCheckRepoTool curl
 vcpkgCheckRepoTool zip
 vcpkgCheckRepoTool unzip
 vcpkgCheckRepoTool tar
+vcpkgCheckRepoTool cmake
+vcpkgCheckRepoTool ninja
 
 UNAME="$(uname)"
 ARCH="$(uname -m)"
