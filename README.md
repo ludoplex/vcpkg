@@ -208,7 +208,13 @@ Then install CMake and Ninja. For example, using Homebrew:
 $ brew install cmake ninja
 ```
 
-Alternatively, you can use MacPorts, or download and install CMake and Ninja standalone binaries.
+Or using MacPorts:
+
+```sh
+$ sudo port install cmake ninja
+```
+
+You can also download and install CMake and Ninja standalone binaries.
 
 Then follow along with the prompts in the windows that comes up.
 
